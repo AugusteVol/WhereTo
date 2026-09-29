@@ -36,7 +36,7 @@ app.post('/api/organizations', async (request, response) => {
     return response.status(500).json({ message: 'Unable to create organization.' })
   }
 })
-
+//GET BE ID
 app.get('/api/organizations', async (_request, response) => {
   try {
     const [organizations] = await pool.execute(
@@ -51,7 +51,7 @@ app.get('/api/organizations', async (_request, response) => {
     return response.status(500).json({ message: 'Unable to load organizations.' })
   }
 })
-
+// CIA SU ID
 app.get('/api/organizations/:id', async (request, response) => {
   try {
     const [organizations] = await pool.execute(
