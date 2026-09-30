@@ -10,6 +10,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Event> Events => Set<Event>();
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,5 +32,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(o => o.Events)
             .HasForeignKey(e => e.OrganizationId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Ticket>()
+            .HasOne(t => t.Event)
+            .WithMany(e => e.Tickets)
+            .HasForeignKey(t => t.EventId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Ticket>()
+            .HasOne(t => t.Account)
+            .WithMany(a => a.Tickets)
+            .HasForeignKey(t => t.AccountId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

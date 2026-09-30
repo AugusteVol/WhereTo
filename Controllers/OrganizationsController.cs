@@ -11,14 +11,13 @@ namespace WhereTo.Api.Controllers;
 [Produces("application/json")]
 public class OrganizationsController(AppDbContext db) : ControllerBase
 {
-    /// <summary>Grąžina visas organizacijas (pagal pavadinimą).</summary>
+    /// <summary>Grąžina visas organizacijas.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<OrganizationResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<OrganizationResponse>>> GetAll(CancellationToken ct)
     {
         var items = await db.Organizations
             .AsNoTracking()
-            .OrderBy(o => o.Name)
             .ToListAsync(ct);
 
         return Ok(items.Select(OrganizationResponse.FromEntity));
@@ -35,6 +34,35 @@ public class OrganizationsController(AppDbContext db) : ControllerBase
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
         return organization is null ? NotFoundResult() : Ok(OrganizationResponse.FromEntity(organization));
+    }
+
+    /// <summary>Grąžina visus organizacijos renginius.</summary>
+    [HttpGet("{id:int}/events")]
+    [ProducesResponseType(typeof(IEnumerable<EventResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IEnumerable<EventResponse>>> GetEvents(int id, CancellationToken ct)
+    {
+        if (!await db.Organizations.AnyAsync(o => o.Id == id, ct))
+        {
+            return NotFoundResult();
+        }
+
+        var events = await db.Events
+            .AsNoTracking()
+            .Where(e => e.OrganizationId == id)
+            .Select(e => new EventResponse
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Category = e.Category,
+                Venue = e.Venue,
+                City = e.City,
+                Date = e.EventDate,
+                Price = e.StartingPrice
+            })
+            .ToListAsync(ct);
+
+        return Ok(events);
     }
 
     /// <summary>Sukuria naują organizaciją.</summary>

@@ -43,4 +43,6 @@ public class Event
 
     [Column("created_at")]
     public DateTime? CreatedAt { get; set; }
+
+    public List<Ticket> Tickets { get; set; } = [];
 }

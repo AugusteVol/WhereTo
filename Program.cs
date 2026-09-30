@@ -56,6 +56,8 @@ await using (var scope = app.Services.CreateAsyncScope())
     await db.Database.EnsureCreatedAsync(); // sukuria whereto.db ir lenteles, jei jų dar nėra
     await OrganizationSeeder.SeedAsync(db);
     await EventSeeder.SeedAsync(db);
+    await AccountSeeder.SeedAsync(db);
+    await TicketSeeder.SeedAsync(db);
 }
 
 if (!app.Environment.IsDevelopment())
