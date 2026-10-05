@@ -7,33 +7,36 @@ public static class TicketSeeder
 {
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
-        var ticketCount = await db.Tickets.CountAsync(cancellationToken);
-        if (ticketCount >= 3)
-        {
-            return;
-        }
-
         var accounts = await db.Accounts
             .OrderBy(a => a.Id)
-            .Take(3)
             .ToListAsync(cancellationToken);
 
         var events = await db.Events
             .OrderBy(e => e.Id)
-            .Take(3)
             .ToListAsync(cancellationToken);
 
-        var ticketsToAdd = 3 - ticketCount;
-        for (var index = 0; index < ticketsToAdd && index < accounts.Count && index < events.Count; index++)
+        if (accounts.Count == 0 || events.Count == 0)
         {
-            var eventItem = events[index];
-            db.Tickets.Add(new Ticket
+            return;
+        }
+
+        for (var accountIndex = 0; accountIndex < accounts.Count; accountIndex++)
+        {
+            var account = accounts[accountIndex];
+            var existingTicketCount = await db.Tickets
+                .CountAsync(ticket => ticket.AccountId == account.Id, cancellationToken);
+
+            for (var ticketIndex = existingTicketCount; ticketIndex < 2; ticketIndex++)
             {
-                EventId = eventItem.Id,
-                AccountId = accounts[index].Id,
-                Price = eventItem.StartingPrice,
-                PurchasedAt = DateTime.UtcNow.AddDays(-(index + 1))
-            });
+                var eventItem = events[(accountIndex + ticketIndex) % events.Count];
+                db.Tickets.Add(new Ticket
+                {
+                    EventId = eventItem.Id,
+                    AccountId = account.Id,
+                    Price = eventItem.StartingPrice,
+                    PurchasedAt = DateTime.UtcNow.AddDays(-(accountIndex + ticketIndex + 1))
+                });
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);

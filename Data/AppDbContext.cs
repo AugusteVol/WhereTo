@@ -4,7 +4,7 @@ using WhereTo.Api.Models;
 namespace WhereTo.Api.Data;
 
 /// <summary>
-/// Lentelės sukuriamos automatiškai (EnsureCreated, žr. Program.cs) – be EF migracijų.
+/// Lentelės sukuriamos automatiškai
 /// </summary>
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
@@ -15,7 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // created_at užpildo pati DB (DEFAULT CURRENT_TIMESTAMP)
+        // pildo db
         modelBuilder.Entity<Organization>()
             .Property(o => o.CreatedAt)
             .ValueGeneratedOnAdd()
@@ -26,19 +26,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .ValueGeneratedOnAdd()
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-        // Trinant organizaciją, renginių organization_id tampa NULL (kaip schema.sql)
+        // Trinant organisation, eventu organization_id tampa NULL
         modelBuilder.Entity<Event>()
             .HasOne(e => e.Organization)
             .WithMany(o => o.Events)
             .HasForeignKey(e => e.OrganizationId)
             .OnDelete(DeleteBehavior.SetNull);
-
+        // su Events
         modelBuilder.Entity<Ticket>()
             .HasOne(t => t.Event)
             .WithMany(e => e.Tickets)
             .HasForeignKey(t => t.EventId)
             .OnDelete(DeleteBehavior.Restrict);
-
+        // Su accounts
         modelBuilder.Entity<Ticket>()
             .HasOne(t => t.Account)
             .WithMany(a => a.Tickets)

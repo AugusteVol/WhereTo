@@ -23,7 +23,7 @@ public class EventRequest
 
     public DateTime Date { get; set; }
 
-    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+    [Range(typeof(decimal), "0", "1000")]
     public decimal Price { get; set; }
 
     [Range(0, int.MaxValue)]
