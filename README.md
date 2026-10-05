@@ -1,6 +1,6 @@
 # WhereTo
 
-Pakeičia `server/` (Node). Duomenų bazė – SQLite failas `whereto.db`
+Duomenų bazė – SQLite failas `whereto.db`
 
 ## Paleidimas
 
@@ -14,10 +14,10 @@ Pirmo paleidimo metu automatiškai sukuriamas `whereto.db`, lentelės ir pavyzdi
 
 - API: http://localhost:4000
 
-## REIKALAVIMAI
+## Reikalavimai
 
 Plėtinys **SQLite Viewer**
 
 ## Duomenų atstatymas
 
-Ištrinti db failą ir vėl paleisti programą iš naujo su dotnet build, tada run.
+Ištrinti .db failą ir vėl paleisti programą iš naujo su dotnet build, tada run.
