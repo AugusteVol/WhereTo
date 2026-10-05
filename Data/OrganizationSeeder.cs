@@ -38,6 +38,20 @@ public static class OrganizationSeeder
                 Description = "A network connecting independent cultural event organizers.",
                 Email = "baltic-culture@example.org",
                 Website = "https://example.org/baltic-culture"
+            },
+            new Organization
+            {
+                Name = "Meno Klubas",
+                Description = "Klubas meno nariams.",
+                Email = "menas@example.org",
+                Website = "https://example.org/meno-klubas"
+            },
+            new Organization
+            {
+                Name = "Popieriaus lankstytojai",
+                Description = "megsti popieriu? mes irgi.",
+                Email = "popierius@example.org",
+                Website = "https://example.org/poperiauslankstytojai"
             });
 
         await db.SaveChangesAsync(cancellationToken);

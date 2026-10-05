@@ -11,8 +11,8 @@ public static class AccountSeeder
         {
             new Account
             {
-                Name = "Demo Account",
-                Email = "demo@example.org"
+                Name = "Denisas Denis",
+                Email = "denis@example.org"
             },
             new Account
             {
@@ -23,6 +23,16 @@ public static class AccountSeeder
             {
                 Name = "Mantas Jankauskas",
                 Email = "mantas@example.org"
+            },
+            new Account
+            {
+                Name = "Ieva Kazlauskiene",
+                Email = "ieva@example.org"
+            },
+            new Account
+            {
+                Name = "Lukas Vaitkus",
+                Email = "lukas@example.org"
             }
         };
 
