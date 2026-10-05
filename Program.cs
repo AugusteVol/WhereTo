@@ -6,29 +6,29 @@ using WhereTo.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------- Duomenų bazė (SQLite: vienas failas, jokio serverio / XAMPP nereikia) ----------
+// DB
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Nerasta ConnectionStrings:Default konfigūracija.");
 
-// whereto.db visada guli projekto aplanke, nesvarbu iš kur paleista programa
+// .db failas visada aplanke
 var sqlite = new SqliteConnectionStringBuilder(connectionString);
 sqlite.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqlite.DataSource);
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(sqlite.ToString()));
 
-// ---------- API ----------
+// api
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails(); // vienodas klaidų formatas (RFC 7807)
 
-// ---------- CORS (React klientas) ----------
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? ["http://localhost:5173"];
+// Reactas
+//var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+//    ?? ["http://localhost:5173"];
+//
+//builder.Services.AddCors(options =>
+//    options.AddPolicy("Client", policy =>
+//        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 
-builder.Services.AddCors(options =>
-    options.AddPolicy("Client", policy =>
-        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
-
-// ---------- Swagger / OpenAPI ----------
+// Swaggeris
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -39,7 +39,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Renginių radimo ir bilietų pirkimo platformos API."
     });
 
-    // Įtraukiame /// komentarus iš kodo į Swagger dokumentaciją
+    // itrauki /// komentarus is kodo i swagger web
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))

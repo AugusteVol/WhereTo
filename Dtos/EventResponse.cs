@@ -1,6 +1,6 @@
 namespace WhereTo.Api.Dtos;
 
-/// <summary>Renginys sąrašui (tas pats formatas, kurio tikisi React klientas).</summary>
+/// <summary>Renginys sąrašui.</summary>
 public class EventResponse
 {
     public int Id { get; set; }
