@@ -1,4 +1,4 @@
-# WhereTo.Api (ASP.NET Core 8 + SQLite + Swagger)
+# WhereTo
 
 Pakeičia `server/` (Node). Duomenų bazė – SQLite failas `whereto.db`
 
