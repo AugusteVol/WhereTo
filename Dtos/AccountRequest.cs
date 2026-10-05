@@ -5,6 +5,8 @@ namespace WhereTo.Api.Dtos;
 /// <summary>Duomenys paskyrai sukurti.</summary>
 public class AccountRequest
 {
+    public int AccountId { get; set; }
+
     [Required, StringLength(150)]
     public string Name { get; set; } = string.Empty;
 

@@ -87,7 +87,7 @@ public class AccountsController(AppDbContext db) : ControllerBase
 
         return Ok(tickets);
     }
-
+    
     private static AccountResponse ToResponse(Account account) => new()
     {
         Id = account.Id,
