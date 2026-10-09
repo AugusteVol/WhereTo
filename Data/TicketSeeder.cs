@@ -20,6 +20,19 @@ public static class TicketSeeder
             return;
         }
 
+        const int eventIdWithOneTicket = 4;
+        var eventFourTickets = await db.Tickets
+            .Where(ticket => ticket.EventId == eventIdWithOneTicket)
+            .OrderBy(ticket => ticket.Id)
+            .ToListAsync(cancellationToken);
+
+        if (eventFourTickets.Count > 1)
+        {
+            db.Tickets.RemoveRange(eventFourTickets.Skip(1));
+        }
+
+        var eventFourAlreadyHasTicket = eventFourTickets.Count > 0;
+
         for (var accountIndex = 0; accountIndex < accounts.Count; accountIndex++)
         {
             var account = accounts[accountIndex];
@@ -29,6 +42,16 @@ public static class TicketSeeder
             for (var ticketIndex = existingTicketCount; ticketIndex < 2; ticketIndex++)
             {
                 var eventItem = events[(accountIndex + ticketIndex) % events.Count];
+                if (eventItem.Id == eventIdWithOneTicket && eventFourAlreadyHasTicket)
+                {
+                    eventItem = events.First(eventItem => eventItem.Id != eventIdWithOneTicket);
+                }
+
+                if (eventItem.Id == eventIdWithOneTicket)
+                {
+                    eventFourAlreadyHasTicket = true;
+                }
+
                 db.Tickets.Add(new Ticket
                 {
                     EventId = eventItem.Id,

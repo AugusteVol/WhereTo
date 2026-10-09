@@ -137,8 +137,24 @@ public class EventsController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
+        if (!await db.Events.AnyAsync(e => e.Id == id, ct))
+        {
+            return NotFoundResult();
+        }
+
+        if (await db.Tickets.AnyAsync(t => t.EventId == id, ct))
+        {
+            return Conflict(new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Event cannot be deleted.",
+                Detail = "The event has tickets. Delete or move those tickets before deleting the event."
+            });
+        }
+
         var deleted = await db.Events.Where(e => e.Id == id).ExecuteDeleteAsync(ct);
         return deleted == 0 ? NotFoundResult() : NoContent();
     }
