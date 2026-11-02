@@ -32,7 +32,57 @@ public class AccountsController(AppDbContext db, JwtTokenService tokens) : Contr
             });
         }
 
-        return Ok(tokens.Create(account));
+        var response = CreateAuthResponse(account);
+        await db.SaveChangesAsync(ct);
+        return Ok(response);
+    }
+
+    /// <summary>Atnaujina trumpalaikį prieigos tokeną naudojant refresh tokeną.</summary>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AuthResponse>> Refresh(RefreshTokenRequest request, CancellationToken ct)
+    {
+        var tokenHash = JwtTokenService.HashRefreshToken(request.RefreshToken);
+        var storedToken = await db.RefreshTokens
+            .Include(token => token.Account)
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, ct);
+
+        if (storedToken is null ||
+            storedToken.RevokedAt.HasValue ||
+            storedToken.ExpiresAt <= DateTime.UtcNow)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Invalid or expired refresh token."
+            });
+        }
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+        var response = CreateAuthResponse(storedToken.Account);
+        await db.SaveChangesAsync(ct);
+        return Ok(response);
+    }
+
+    /// <summary>Atšaukia refresh tokeną ir užbaigia sesiją.</summary>
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout(RefreshTokenRequest request, CancellationToken ct)
+    {
+        var tokenHash = JwtTokenService.HashRefreshToken(request.RefreshToken);
+        var storedToken = await db.RefreshTokens
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, ct);
+
+        if (storedToken is not null && !storedToken.RevokedAt.HasValue)
+        {
+            storedToken.RevokedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(ct);
+        }
+
+        return NoContent();
     }
 
     /// <summary>Grąžina vieną paskyrą pagal ID.</summary>
@@ -128,4 +178,27 @@ public class AccountsController(AppDbContext db, JwtTokenService tokens) : Contr
             Status = StatusCodes.Status404NotFound,
             Title = "Account not found."
         });
+
+    private AuthResponse CreateAuthResponse(Account account)
+    {
+        var accessToken = tokens.CreateAccessToken(account);
+        var refreshToken = tokens.CreateRefreshToken();
+
+        db.RefreshTokens.Add(new RefreshToken
+        {
+            AccountId = account.Id,
+            TokenHash = refreshToken.Hash,
+            ExpiresAt = refreshToken.ExpiresAt,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        return new AuthResponse
+        {
+            Token = accessToken.Token,
+            ExpiresAt = accessToken.ExpiresAt,
+            RefreshToken = refreshToken.Token,
+            RefreshTokenExpiresAt = refreshToken.ExpiresAt,
+            Account = ToResponse(account)
+        };
+    }
 }
