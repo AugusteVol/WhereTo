@@ -78,6 +78,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.EnsureCreatedAsync(); // sukuria whereto.db ir lenteles, jei jų dar nėra
     await EnsureAuthenticationColumnsAsync(sqlite.ToString());
+    await EnsureRefreshTokensTableAsync(sqlite.ToString());
     await OrganizationSeeder.SeedAsync(db);
     await EventSeeder.SeedAsync(db);
     await AccountSeeder.SeedAsync(db);
@@ -109,6 +110,28 @@ static async Task EnsureAuthenticationColumnsAsync(string connectionString)
     await connection.OpenAsync();
     await AddColumnIfMissingAsync(connection, "password_hash", "TEXT NOT NULL DEFAULT ''");
     await AddColumnIfMissingAsync(connection, "role", "TEXT NOT NULL DEFAULT 'User'");
+}
+
+static async Task EnsureRefreshTokensTableAsync(string connectionString)
+{
+    await using var connection = new SqliteConnection(connectionString);
+    await connection.OpenAsync();
+    await using var command = connection.CreateCommand();
+    command.CommandText = """
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+            id INTEGER NOT NULL CONSTRAINT pk_refresh_tokens PRIMARY KEY AUTOINCREMENT,
+            account_id INTEGER NOT NULL,
+            token_hash TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            revoked_at TEXT NULL,
+            CONSTRAINT fk_refresh_tokens_accounts_account_id
+                FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS ix_refresh_tokens_token_hash
+            ON refresh_tokens (token_hash);
+        """;
+    await command.ExecuteNonQueryAsync();
 }
 
 static async Task AddColumnIfMissingAsync(SqliteConnection connection, string columnName, string definition)
