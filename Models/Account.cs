@@ -15,5 +15,11 @@ public class Account
     [Column("email"), MaxLength(150)]
     public string Email { get; set; } = string.Empty;
 
+    [Column("password_hash"), MaxLength(500)]
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [Column("role"), MaxLength(50)]
+    public string Role { get; set; } = "User";
+
     public List<Ticket> Tickets { get; set; } = [];
 }

@@ -1,8 +1,12 @@
 using System.Reflection;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Microsoft.IdentityModel.Tokens;
 using WhereTo.Api.Data;
+using WhereTo.Api.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +19,25 @@ var sqlite = new SqliteConnectionStringBuilder(connectionString);
 sqlite.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqlite.DataSource);
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(sqlite.ToString()));
+
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Nerasta Jwt:Key konfigūracija.");
+builder.Services.AddSingleton<JwtTokenService>();
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            RoleClaimType = System.Security.Claims.ClaimTypes.Role
+        };
+    });
+builder.Services.AddAuthorization();
 
 // api
 builder.Services.AddControllers();
@@ -54,6 +77,7 @@ await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.EnsureCreatedAsync(); // sukuria whereto.db ir lenteles, jei jų dar nėra
+    await EnsureAuthenticationColumnsAsync(sqlite.ToString());
     await OrganizationSeeder.SeedAsync(db);
     await EventSeeder.SeedAsync(db);
     await AccountSeeder.SeedAsync(db);
@@ -73,6 +97,32 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Client");
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static async Task EnsureAuthenticationColumnsAsync(string connectionString)
+{
+    await using var connection = new SqliteConnection(connectionString);
+    await connection.OpenAsync();
+    await AddColumnIfMissingAsync(connection, "password_hash", "TEXT NOT NULL DEFAULT ''");
+    await AddColumnIfMissingAsync(connection, "role", "TEXT NOT NULL DEFAULT 'User'");
+}
+
+static async Task AddColumnIfMissingAsync(SqliteConnection connection, string columnName, string definition)
+{
+    await using var check = connection.CreateCommand();
+    check.CommandText = "SELECT COUNT(*) FROM pragma_table_info('accounts') WHERE name = $name";
+    check.Parameters.AddWithValue("$name", columnName);
+    var exists = Convert.ToInt32(await check.ExecuteScalarAsync()) > 0;
+    if (exists)
+    {
+        return;
+    }
+
+    await using var alter = connection.CreateCommand();
+    alter.CommandText = $"ALTER TABLE accounts ADD COLUMN {columnName} {definition}";
+    await alter.ExecuteNonQueryAsync();
+}

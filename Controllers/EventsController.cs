@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using WhereTo.Api.Data;
 using WhereTo.Api.Dtos;
@@ -9,6 +10,7 @@ namespace WhereTo.Api.Controllers;
 [ApiController]
 [Route("api/events")]
 [Produces("application/json")]
+[Authorize]
 public class EventsController(AppDbContext db) : ControllerBase
 {
     /// <summary>Grąžina visus renginius.</summary>
@@ -90,6 +92,7 @@ public class EventsController(AppDbContext db) : ControllerBase
 
     /// <summary>Sukuria naują renginį.</summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(EventResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -111,6 +114,7 @@ public class EventsController(AppDbContext db) : ControllerBase
 
     /// <summary>Atnaujina renginį.</summary>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -135,6 +139,7 @@ public class EventsController(AppDbContext db) : ControllerBase
 
     /// <summary>Ištrina renginį.</summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
